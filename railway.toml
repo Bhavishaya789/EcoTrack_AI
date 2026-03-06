@@ -1,5 +1,7 @@
-[build] 
-buildCommand = "pip install -r backend_py/requirements.txt" 
- 
-[deploy] 
+[build]
+builder = "nixpacks"
+buildCommand = "pip install --upgrade pip && pip install -r backend_py/requirements.txt"
+
+[deploy]
 startCommand = "cd backend_py && python app.py"
+restartPolicyType = "on_failure"
