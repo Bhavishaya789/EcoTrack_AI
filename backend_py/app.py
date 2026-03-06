@@ -1,6 +1,5 @@
 import os
 import sys # Added for CLI flags
-import datetime
 import bcrypt
 import json
 import requests
