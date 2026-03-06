@@ -4,7 +4,7 @@
    =================================================== */
 
 // ── Constants ─────────────────────────────────────────
-const API_BASE = window.location.port === '8080' ? 'http://localhost:5050/api' : 'https://ecotrackai-production.up.railway.app/api';
+const API_BASE = window.location.port === '8080' ? 'http://localhost:5050/api' : 'https://ecotrack-ai-kg5q.onrender.com/api';
 const STORAGE_KEYS = {
   TOKEN: 'ecotrack_token',
   USER: 'ecotrack_user'
@@ -113,7 +113,9 @@ async function apiFetch(endpoint, options = {}) {
     return data;
   } catch (err) {
     if (err.message === 'Failed to fetch') {
-      const msg = "Server is waking up... Please wait 60 seconds and try again.";
+      const msg = " Backend Error: The server on port 5050 is not responding. Please run 'Launch_EcoTrack_AI.bat' and ensure you have MongoDB installed locally.";
+      console.warn(msg);
+      throw new Error(msg);
     }
     console.error(`API Error (${endpoint}):`, err);
     throw err;
@@ -231,6 +233,7 @@ async function sendOTP() {
     showGlobalToast("Please enter your email address first.");
     return;
   }
+
   const btn = document.getElementById('sendOTPBtn');
   btn.disabled = true;
   btn.textContent = "Sending...";
@@ -240,16 +243,11 @@ async function sendOTP() {
       method: 'POST',
       body: JSON.stringify({ email })
     });
+
     if (data.success) {
       document.getElementById('otpGroup').style.display = 'flex';
       btn.textContent = "Resend OTP";
-      if (data.otp) {
-        // Email could not be sent - show OTP directly on screen
-        document.getElementById('regOTP').value = data.otp;
-        showGlobalToast("📋 OTP (email unavailable): " + data.otp + " — it has been filled in for you!");
-      } else {
-        showGlobalToast(data.message || "OTP sent to your email! 📧");
-      }
+      showGlobalToast(data.message || "OTP sent to your email! 📧");
     } else {
       showGlobalToast("Failed: " + data.message);
       btn.textContent = "Send OTP";
@@ -261,6 +259,7 @@ async function sendOTP() {
     btn.disabled = false;
   }
 }
+
 async function handleRegister(e) {
   e.preventDefault();
   const firstName = document.getElementById('regFirstName').value.trim();
