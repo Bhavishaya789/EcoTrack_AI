@@ -4,7 +4,7 @@
    =================================================== */
 
 // ── Constants ─────────────────────────────────────────
-const API_BASE = window.location.port === '8080' ? 'http://localhost:5050/api' : 'https://ecotrack-ai-kg5q.onrender.com/api';
+const API_BASE = window.location.port === '8080' ? 'http://localhost:5050/api' : 'https://ecotrackai-production.up.railway.app/api';
 const STORAGE_KEYS = {
   TOKEN: 'ecotrack_token',
   USER: 'ecotrack_user'
@@ -113,7 +113,7 @@ async function apiFetch(endpoint, options = {}) {
     return data;
   } catch (err) {
     if (err.message === 'Failed to fetch') {
-  const msg = "Server is waking up... Please wait 60 seconds and try again.";
+      const msg = "Server is waking up... Please wait 60 seconds and try again.";
     }
     console.error(`API Error (${endpoint}):`, err);
     throw err;
