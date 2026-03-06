@@ -1,0 +1,5 @@
+[build] 
+buildCommand = "pip install -r backend_py/requirements.txt" 
+ 
+[deploy] 
+startCommand = "cd backend_py && python app.py"
