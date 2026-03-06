@@ -57,7 +57,7 @@ CORS(app,
      origins=["https://inspiring-dango-b3bb97.netlify.app", "http://localhost:8080"],
      allow_headers=["Content-Type", "Authorization"],
      methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-     supports_credentials=True)})
+     supports_credentials=True))
 
 print("--- EcoTrack AI Backend Initializing ---")
 
