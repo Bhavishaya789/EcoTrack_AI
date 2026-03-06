@@ -244,9 +244,9 @@ def _send_welcome_email_sync(user_email, first_name):
     smtp_pass    = smtp_pass_raw.strip() if smtp_pass_raw else ""
 
     try:
-        smtp_port = int(os.getenv("SMTP_PORT", 587))
+        smtp_port = int(os.getenv("SMTP_PORT", 465))
     except (ValueError, TypeError):
-        smtp_port = 587
+        smtp_port = 465
 
     subject = f"🌿 Welcome to {sender_name} – Let's Go Green Together!"
 
@@ -356,9 +356,7 @@ The {sender_name} Team
         msg.attach(MIMEText(html_body, 'html', 'utf-8'))
 
         # NOTE: Do NOT set_debuglevel inside threads — it can corrupt output and cause issues
-        with smtplib.SMTP(smtp_server, smtp_port, timeout=20) as server:
-            server.ehlo()
-            server.starttls()
+        with smtplib.SMTP_SSL(smtp_server, smtp_port, timeout=20) as server:
             server.ehlo()
             server.login(smtp_user, smtp_pass)
             server.send_message(msg)
@@ -428,7 +426,7 @@ def send_otp():
         sender_name  = os.getenv("COMPANY_NAME", "EcoTrack AI").strip()
         sender_email = os.getenv("COMPANY_EMAIL", "").strip()
         smtp_server  = os.getenv("SMTP_SERVER", "smtp.gmail.com").strip()
-        smtp_port    = int(os.getenv("SMTP_PORT", 587))
+        smtp_port    = int(os.getenv("SMTP_PORT", 465))
         smtp_user    = os.getenv("SMTP_USER", "").strip()
         smtp_pass    = os.getenv("SMTP_PASS", "").strip()
 
@@ -483,9 +481,7 @@ def send_otp():
         msg.attach(MIMEText(plain_body, 'plain', 'utf-8'))
         msg.attach(MIMEText(html_body, 'html', 'utf-8'))
 
-        with smtplib.SMTP(smtp_server, smtp_port, timeout=20) as server:
-            server.ehlo()
-            server.starttls()
+        with smtplib.SMTP_SSL(smtp_server, smtp_port, timeout=20) as server:
             server.ehlo()
             server.login(smtp_user, smtp_pass)
             server.send_message(msg)
