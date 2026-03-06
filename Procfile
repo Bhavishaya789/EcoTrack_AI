@@ -1,1 +1,1 @@
-web: gunicorn --chdir backend_py app:app --bind 0.0.0.0:$PORT
+web: bash -c "cd backend_py && pip install -r ../requirements.txt && gunicorn app:app --bind 0.0.0.0:$PORT"
