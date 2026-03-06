@@ -29,25 +29,25 @@
         </div>
         <nav class="sidebar-nav">
             <a href="dashboard.html" class="nav-item active" id="nav-dashboard">
-                <span class="nav-icon">📊</span><span class="nav-label" data-i18n="dashboard">Dashboard</span>
+                <span class="nav-icon">📊</span><span class="nav-label" data-i18n="dashboard" data-i18n="dashboard">Dashboard</span>
             </a>
             <a href="report.html" class="nav-item" id="nav-report">
-                <span class="nav-icon">📜</span><span class="nav-label">Reports</span>
+                <span class="nav-icon">📜</span><span class="nav-label" data-i18n="reports">Reports</span>
             </a>
             <a href="calculator.html" class="nav-item" id="nav-calculator">
-                <span class="nav-icon">🧮</span><span class="nav-label">Calculator</span>
+                <span class="nav-icon">🧮</span><span class="nav-label" data-i18n="calculator">Calculator</span>
             </a>
             <a href="history.html" class="nav-item" id="nav-history">
-                <span class="nav-icon">📅</span><span class="nav-label">History</span>
+                <span class="nav-icon">📅</span><span class="nav-label" data-i18n="history">History</span>
             </a>
             <a href="recommendations.html" class="nav-item" id="nav-recommendations">
-                <span class="nav-icon">💡</span><span class="nav-label">AI Insights</span>
+                <span class="nav-icon">💡</span><span class="nav-label" data-i18n="aiInsights">AI Insights</span>
             </a>
             <a href="leaderboard.html" class="nav-item" id="nav-leaderboard">
-                <span class="nav-icon">🏆</span><span class="nav-label">Leaderboard</span>
+                <span class="nav-icon">🏆</span><span class="nav-label" data-i18n="leaderboard">Leaderboard</span>
             </a>
             <a href="offset.html" class="nav-item" id="nav-offset">
-                <span class="nav-icon">🌲</span><span class="nav-label">Offset Tools</span>
+                <span class="nav-icon">🌲</span><span class="nav-label" data-i18n="offsetTools">Offset Tools</span>
             </a>
         </nav>
         <div class="sidebar-footer">
@@ -59,10 +59,10 @@
                 </div>
             </div>
             <div class="lang-toggle" style="margin-bottom: 1rem; padding: 0 1rem; display: flex; gap: 0.5rem;">
-                <button onclick="switchLanguage('en')"
-                    style="font-size: 0.7rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 0.3rem 0.6rem; border-radius: 8px; cursor: pointer;">EN</button>
-                <button onclick="switchLanguage('hi')"
-                    style="font-size: 0.7rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 0.3rem 0.6rem; border-radius: 8px; cursor: pointer;">HI</button>
+                <button onclick="switchLanguage('en')" data-lang="en" class="lang-btn"
+                    style="font-size: 0.7rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 0.3rem 0.6rem; border-radius: 8px; cursor: pointer; transition:0.2s;">EN</button>
+                <button onclick="switchLanguage('hi')" data-lang="hi" class="lang-btn"
+                    style="font-size: 0.7rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 0.3rem 0.6rem; border-radius: 8px; cursor: pointer; transition:0.2s;">HI</button>
             </div>
             <button class="logout-btn" onclick="logout()" data-i18n="logout">⬡ Logout</button>
         </div>
@@ -97,7 +97,7 @@
             <!-- EcoScore Card (Large) -->
             <div class="card ecoscore-card reveal">
                 <div class="card-header">
-                    <h3>Your EcoScore</h3>
+                    <h3 data-i18n="yourEcoScore">Your EcoScore</h3>
                     <div class="score-level-badge" style="background: rgba(0, 212, 170, 0.1); color: var(--primary);">
                         <span>⭐</span> Elite
                     </div>
@@ -120,7 +120,7 @@
                         </svg>
                         <div class="score-inner">
                             <div class="score-number" id="ecoScoreDisplay">--</div>
-                            <div class="score-label">POINTS</div>
+                            <div class="score-label" data-i18n="points">POINTS</div>
                         </div>
                     </div>
                     <div class="score-info" style="flex: 1;">
@@ -149,7 +149,7 @@
             <!-- Total Emissions Card -->
             <div class="card emissions-summary-card reveal">
                 <div class="card-header">
-                    <h3>Impact Breakdown</h3>
+                    <h3 data-i18n="impactBreakdown">Impact Breakdown</h3>
                     <select class="period-select" id="emissionPeriod" onchange="updateEmissionDisplay()">
                         <option value="today">Today</option>
                         <option value="week">This Week</option>
@@ -164,7 +164,7 @@
                     <div class="breakdown-item" data-cat="transport">
                         <span class="breakdown-icon">🚗</span>
                         <div class="breakdown-bar-wrap">
-                            <span class="breakdown-label">TRANSPORTATION</span>
+                            <span class="breakdown-label" data-i18n="transportation">TRANSPORTATION</span>
                             <div class="breakdown-bar">
                                 <div class="breakdown-fill transport-fill" id="transportFill" style="width:0%"></div>
                             </div>
@@ -174,7 +174,7 @@
                     <div class="breakdown-item" data-cat="electricity">
                         <span class="breakdown-icon">⚡</span>
                         <div class="breakdown-bar-wrap">
-                            <span class="breakdown-label">ELECTRICITY</span>
+                            <span class="breakdown-label" data-i18n="electricity">ELECTRICITY</span>
                             <div class="breakdown-bar">
                                 <div class="breakdown-fill electricity-fill" id="electricFill" style="width:0%"></div>
                             </div>
@@ -184,7 +184,7 @@
                     <div class="breakdown-item" data-cat="food">
                         <span class="breakdown-icon">🍽️</span>
                         <div class="breakdown-bar-wrap">
-                            <span class="breakdown-label">DIET & MEALS</span>
+                            <span class="breakdown-label" data-i18n="dietMeals">DIET & MEALS</span>
                             <div class="breakdown-bar">
                                 <div class="breakdown-fill food-fill" id="foodFill" style="width:0%"></div>
                             </div>
@@ -318,6 +318,7 @@
             title="Scroll down">&#8681;</button>
     </div>
 
+    <script src="js/i18n.js"></script>
     <script src="js/app.js"></script>
     <script src="js/i18n.js"></script>
     <script src="js/autolog.js"></script>
