@@ -1,5 +1,6 @@
 import os
-import sys # Added for CLI flags
+import sys
+import jwt # Added for CLI flags
 import bcrypt
 import json
 import requests
