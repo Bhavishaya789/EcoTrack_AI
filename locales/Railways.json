@@ -1,0 +1,9 @@
+{
+    "build": {
+        "builder": "NIXPACKS"
+    },
+    "deploy": {
+        "startCommand": "gunicorn --chdir backend_py app:app --bind 0.0.0.0:$PORT",
+        "restartPolicyType": "ON_FAILURE"
+    }
+}
