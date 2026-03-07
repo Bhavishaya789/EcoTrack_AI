@@ -424,76 +424,10 @@ def send_otp():
             upsert=True
         )
 
-        # Send OTP via Gmail SMTP
+        # EmailJS handles email sending from frontend — backend just generates & stores OTP
         sender_name  = os.getenv("COMPANY_NAME", "EcoTrack AI").strip()
-        sender_email = os.getenv("COMPANY_EMAIL", "").strip()
-        smtp_server  = os.getenv("SMTP_SERVER", "smtp.gmail.com").strip()
-        smtp_port    = int(os.getenv("SMTP_PORT", 465))
-        smtp_user    = os.getenv("SMTP_USER", "").strip()
-        smtp_pass    = os.getenv("SMTP_PASS", "").strip()
 
-        html_body = f"""
-        <!DOCTYPE html>
-        <html>
-        <head><meta charset="UTF-8"></head>
-        <body style="margin:0;padding:0;background:#0a1628;font-family:Arial,sans-serif;">
-          <table width="100%" cellpadding="0" cellspacing="0" style="background:#0a1628;padding:30px 0">
-            <tr><td align="center">
-              <table width="500" cellpadding="0" cellspacing="0"
-                     style="background:#0f2035;border-radius:16px;overflow:hidden;border:1px solid #1e3a5f;">
-                <tr>
-                  <td style="background:linear-gradient(135deg,#0d4f3a,#0a3d5c);padding:35px 30px;text-align:center;">
-                    <div style="font-size:40px">🌿</div>
-                    <h1 style="color:#ffffff;margin:10px 0 4px;font-size:22px;font-weight:800;">Email Verification</h1>
-                    <p style="color:#a0d4b5;margin:0;font-size:14px;">{sender_name}</p>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:35px 40px;text-align:center;">
-                    <p style="color:#94a3b8;font-size:15px;margin:0 0 20px;">
-                      Use the code below to verify your email. It expires in <strong style="color:#22d3ee;">10 minutes</strong>.
-                    </p>
-                    <div style="background:#0d2a40;border-radius:12px;padding:24px;display:inline-block;
-                                border:2px dashed #22c55e;margin:0 auto;">
-                      <span style="font-size:38px;font-weight:900;letter-spacing:10px;color:#4ade80;">{otp}</span>
-                    </div>
-                    <p style="color:#64748b;font-size:13px;margin:24px 0 0;">
-                      If you didn't request this, please ignore this email.
-                    </p>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="background:#071525;padding:16px 30px;text-align:center;">
-                    <p style="color:#475569;font-size:12px;margin:0;">© 2026 {sender_name}</p>
-                  </td>
-                </tr>
-              </table>
-            </td></tr>
-          </table>
-        </body>
-        </html>
-        """
-
-        plain_body = f"Your {sender_name} OTP is: {otp}\nValid for 10 minutes. Do not share this with anyone."
-
-        msg = MIMEMultipart('alternative')
-        msg['From']    = f"{sender_name} <{sender_email}>"
-        msg['To']      = email
-        msg['Subject'] = f"🔐 Your {sender_name} Verification Code"
-        msg.attach(MIMEText(plain_body, 'plain', 'utf-8'))
-        msg.attach(MIMEText(html_body, 'html', 'utf-8'))
-
-        # Try sending email, but always return OTP as fallback
-        # Always return OTP — EmailJS on frontend handles the actual email sending
-        try:
-            with smtplib.SMTP_SSL(smtp_server, 465, timeout=10) as server:
-                server.ehlo()
-                server.login(smtp_user, smtp_pass)
-                server.send_message(msg)
-            print(f"OTP EMAIL: Sent OTP to {email}")
-        except Exception as mail_err:
-            print(f"OTP SMTP skipped (EmailJS handles it): {mail_err}")
-
+        print(f"OTP generated for {email} — EmailJS will send the email from frontend")
         return jsonify({"success": True, "message": f"OTP ready for {email}", "otp": otp})
 
     except Exception as e:

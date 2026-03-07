@@ -16,12 +16,6 @@ const EMAILJS_SERVICE_ID   = 'ecotrack_service';
 const EMAILJS_OTP_TEMPLATE = 'template_u2x005o';
 const EMAILJS_WELCOME_TEMPLATE = 'template_gunv9po';
 
-// Initialize EmailJS
-(function() {
-  if (typeof emailjs !== 'undefined') {
-    emailjs.init(EMAILJS_PUBLIC_KEY);
-  }
-})();
 
 // ── Federated Learning Simulation ─────────────────────
 // Research goal: Improve local predictions without sharing raw data.
@@ -267,60 +261,56 @@ async function sendOTP() {
   btn.textContent = "Sending...";
 
   try {
-    // Step 1: Generate OTP on backend (stores in MongoDB for verification)
+    // Step 1: Ask backend to generate & store OTP in MongoDB
     const data = await apiFetch('/auth/send-otp', {
       method: 'POST',
       body: JSON.stringify({ email })
     });
 
-    if (!data.success && !data.otp) {
-      throw new Error(data.message || 'Failed to generate OTP');
+    if (!data.success) {
+      throw new Error(data.message || 'Backend failed to generate OTP');
     }
 
-    // Step 2: Get OTP value (from response if email failed, or use a fresh one)
-    const otpCode = data.otp || null;
-
-    // Step 3: Send OTP email via EmailJS (frontend, no SMTP needed)
-    if (typeof emailjs !== 'undefined') {
-      await emailjs.send(
-        EMAILJS_SERVICE_ID,
-        EMAILJS_OTP_TEMPLATE,
-        {
-          to_email: email,
-          to_name: firstName,
-          otp: otpCode || '(check your registered email)',
-          email: email
-        }
-      );
-      document.getElementById('otpGroup').style.display = 'flex';
-      btn.textContent = "Resend OTP";
-      showGlobalToast("OTP sent to " + email + " 📧");
-    } else {
-      // EmailJS not loaded fallback
-      document.getElementById('otpGroup').style.display = 'flex';
-      btn.textContent = "Resend OTP";
-      if (data.otp) {
-        document.getElementById('regOTP').value = data.otp;
-        showGlobalToast("📋 OTP filled in for you: " + data.otp);
-      } else {
-        showGlobalToast(data.message || "OTP sent! 📧");
-      }
+    const otpCode = data.otp;
+    if (!otpCode) {
+      throw new Error('No OTP received from server');
     }
+
+    console.log('OTP received from backend:', otpCode);
+
+    // Step 2: Send email via EmailJS with the real OTP
+    if (typeof emailjs === 'undefined') {
+      throw new Error('EmailJS not loaded');
+    }
+
+    const result = await emailjs.send(
+      'ecotrack_service',
+      'template_u2x005o',
+      {
+        to_email: email,
+        to_name: firstName,
+        otp: otpCode,
+        email: email
+      },
+      'grdE8hvT9O25mIPm0'
+    );
+
+    console.log('EmailJS result:', result);
+
+    // Step 3: Show OTP field
+    document.getElementById('otpGroup').style.display = 'flex';
+    btn.textContent = "Resend OTP";
+    showGlobalToast("✅ OTP sent to " + email + " — check your inbox!");
+
   } catch (err) {
-    // Even if EmailJS fails, show OTP if backend returned it
-    const otpInput = document.getElementById('regOTP');
-    if (err.otp) {
-      otpInput.value = err.otp;
-      document.getElementById('otpGroup').style.display = 'flex';
-      showGlobalToast("📋 OTP ready: " + err.otp);
-    } else {
-      showGlobalToast("Failed to send OTP: " + err.message);
-    }
+    console.error('sendOTP error:', err);
+    showGlobalToast("Error: " + (err.text || err.message || 'Something went wrong'));
     btn.textContent = "Send OTP";
   } finally {
     btn.disabled = false;
   }
 }
+
 
 async function handleRegister(e) {
   e.preventDefault();

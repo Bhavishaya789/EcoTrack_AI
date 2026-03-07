@@ -14,6 +14,16 @@
     rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/landing.css" />
+  <!-- EmailJS SDK — loaded in head to ensure available before any button click -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      if (typeof emailjs !== 'undefined') {
+        emailjs.init('grdE8hvT9O25mIPm0');
+        console.log('EmailJS initialized ✅');
+      }
+    });
+  </script>
 </head>
 
 <body class="landing-body">
@@ -432,9 +442,6 @@
       </form>
     </div>
   </div>
-
-  <!-- EmailJS SDK -->
-  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <script src="js/app.js"></script>
   <script src="js/landing.js"></script>
 </body>
