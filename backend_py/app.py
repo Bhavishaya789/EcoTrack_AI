@@ -25,16 +25,16 @@ from sklearn.linear_model import LinearRegression
 # Load environment variables from .env file (using absolute path)
 env_path = os.path.join(os.path.dirname(__file__), ".env")
 load_dotenv(dotenv_path=env_path)
-import google.generativeai as genai
+from groq import Groq
 
 # ── AI CONFIGURATION ──────────────────────────────────
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-if GOOGLE_API_KEY:
-    genai.configure(api_key=GOOGLE_API_KEY)
-    ai_model = genai.GenerativeModel('gemini-2.0-flash')
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+if GROQ_API_KEY:
+    ai_client = Groq(api_key=GROQ_API_KEY)
+    print("LOG: Groq AI Client Initialized (llama-3.3-70b-versatile)")
 else:
-    print("WARNING: GOOGLE_API_KEY not found. AI Chat will work in mock mode.")
-    ai_model = None
+    print("WARNING: GROQ_API_KEY not found. AI Chat will work in mock mode.")
+    ai_client = None
 
 # ── TWILIO CONFIGURATION ─────────────────────────────
 TWILIO_SID = os.getenv("TWILIO_ACCOUNT_SID")
@@ -1071,32 +1071,25 @@ def ai_chat():
 
         # Fetch user's recent entries for personalized tips
         recent_entries = list(entries_col.find({"user": uid})) if use_mongodb else entries_col.find({"user": uid})
-        recent_entries = sorted(recent_entries, key=lambda x: x.get('date',''), reverse=True)[:7]
-        avg_transport = round(sum(e.get('transport',0) for e in recent_entries) / max(len(recent_entries),1), 2)
-        avg_electricity = round(sum(e.get('electricity',0) for e in recent_entries) / max(len(recent_entries),1), 2)
-        avg_food = round(sum(e.get('food',0) for e in recent_entries) / max(len(recent_entries),1), 2)
+        recent_entries = sorted(recent_entries, key=lambda x: x.get('date', ''), reverse=True)[:7]
+        avg_transport = round(sum(e.get('transport', 0) for e in recent_entries) / max(len(recent_entries), 1), 2)
+        avg_electricity = round(sum(e.get('electricity', 0) for e in recent_entries) / max(len(recent_entries), 1), 2)
+        avg_food = round(sum(e.get('food', 0) for e in recent_entries) / max(len(recent_entries), 1), 2)
         user_ecoscore = request.user.get('ecoScore', 0)
 
-        prompt = f"""
-You are EcoAssistant, the friendly AI chatbot for EcoTrack AI — an Indian carbon footprint tracking platform.
+        system_prompt = """You are EcoAssistant, the friendly AI chatbot for EcoTrack AI — an Indian carbon footprint tracking platform.
 You help users understand their carbon footprint, answer eco questions, give personalized tips, and log activities.
-
-USER: {user_name}
-USER'S ECOSCORE: {user_ecoscore}/800
-USER'S 7-DAY AVERAGES: Transport={avg_transport}kg CO2/day, Electricity={avg_electricity}kg CO2/day, Food={avg_food}kg CO2/day
-
-USER MESSAGE: "{user_msg}"
 
 INDIA-SPECIFIC EMISSION FACTORS (kg CO2):
 Transport:
 - Petrol car: 2.31/litre, avg 0.18/km
 - Diesel car: 2.68/litre, avg 0.15/km
-- CNG car: 2.66/kg, avg 0.10/km
-- Electric car: 0.82/kWh, avg 0.02/km
+- CNG car: 0.10/km
+- Electric car: 0.02/km
 - Auto/Taxi: 0.15/km
 - Bus: 0.08/km per person
 - Metro/Train: 0.03/km per person
-- Flight Economy: 0.158/km, Business: 0.428/km
+- Flight Economy: 0.158/km
 
 Electricity:
 - Grid electricity: 0.82 kg CO2/kWh
@@ -1105,60 +1098,63 @@ Electricity:
 
 Food (per meal/day):
 - Vegan: ~1.5 kg CO2/day
-- Pure Vegetarian: ~1.8 kg CO2/day
-- Egg-Veg: ~2.0 kg CO2/day
+- Vegetarian: ~1.8 kg CO2/day
 - Omnivore: ~2.8 kg CO2/day
 - Heavy Meat: ~3.5 kg CO2/day
 - Butter Chicken: 3.0 kg, Chicken Biryani: 2.5 kg, Dal Tadka: 0.8 kg
 - Paneer Butter Masala: 2.5 kg, Rajma Chawal: 0.8 kg
 
-ECOTRACK FEATURES YOU CAN EXPLAIN:
+ECOTRACK FEATURES:
 - Carbon Calculator: Log transport, electricity, food emissions daily
-- EcoScore (0-800): Higher = greener. 50+ kg CO2/day = 400 score, 20 kg/day = 640 score
-- AI Insights: ML predictions for next month's emissions
+- EcoScore (0-800): Higher = greener
+- AI Insights: ML predictions for next month emissions
 - Leaderboard: Compete with other users
-- Offset Tools: Tree planting calculator, solar savings predictor, carbon credit calculator
-- History: View past emission trends
-- Report Dashboard: Compare with India's national average (5.2 kg CO2/person/day)
-
-INDIA NATIONAL TARGETS:
-- Daily average: 5.2 kg CO2e per person
-- Net Zero target: 2070
-- 2030 target: 45% reduction in emission intensity
+- Offset Tools: Tree planting, solar savings, carbon credit calculator
+- India's daily average: 5.2 kg CO2e per person
+- India Net Zero target: 2070
 
 INSTRUCTIONS:
-1. Answer any carbon/eco/environment question thoroughly and helpfully
-2. Give personalized tips based on the user's actual data (transport={avg_transport}, electricity={avg_electricity}, food={avg_food})
-3. If the user mentions a loggable activity (drove, ate, used electricity), set autoLog=true
-4. Support both Hindi and English — detect language from user message and respond in same language
+1. Answer any carbon/eco/environment question thoroughly
+2. Give personalized tips based on user's actual emission data
+3. If user mentions a loggable activity (drove, ate, used electricity), set autoLog=true
+4. Support both Hindi and English — detect language and respond in same language
 5. Be friendly, encouraging, and India-specific
-6. Keep responses concise but complete (max 4-5 sentences for general questions)
-7. Use emojis appropriately 🌿
+6. Use emojis appropriately 🌿
 
 RESPOND IN STRICT JSON FORMAT ONLY (no markdown, no extra text):
-{{
-  "response": "Your helpful answer here in the same language as user message",
+{
+  "response": "Your helpful answer here",
   "autoLog": false,
   "category": "transport",
   "value": 0,
   "detail": ""
-}}
-"""
+}"""
 
-        if ai_model:
-            response = ai_model.generate_content(prompt)
-            text = response.text.strip()
-            # Clean JSON from markdown
-            if "```json" in text:
-                text = text.split("```json")[1].split("```")[0].strip()
-            elif "```" in text:
-                text = text.split("```")[1].split("```")[0].strip()
+        user_prompt = f"""User: {user_name}
+EcoScore: {user_ecoscore}/800
+7-day averages: Transport={avg_transport}kg/day, Electricity={avg_electricity}kg/day, Food={avg_food}kg/day
 
-            # Safe JSON parse
+User message: "{user_msg}"
+
+Respond in JSON only."""
+
+        if ai_client:
+            completion = ai_client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                temperature=0.7,
+                max_tokens=500,
+                response_format={"type": "json_object"}
+            )
+
+            text = completion.choices[0].message.content.strip()
+
             try:
                 ai_data = json.loads(text)
             except json.JSONDecodeError:
-                # Extract response text even if JSON is malformed
                 import re
                 match = re.search(r'"response"\s*:\s*"([^"]+)"', text)
                 if match:
@@ -1238,27 +1234,37 @@ def ai_vision():
         }
         """
 
-        if ai_model:
-            # Prepare image for Gemini
+        if ai_client:
+            # Groq vision using llama-4 scout (supports images)
             import base64
-            image_data = base64.b64decode(image_b64)
-            
-            # Use multi-modal generative model
-            vision_model = genai.GenerativeModel('gemini-2.0-flash')
-            response = vision_model.generate_content([
-                prompt,
-                {'mime_type': 'image/jpeg', 'data': image_data}
-            ])
-            
-            text = response.text.strip()
+            completion = ai_client.chat.completions.create(
+                model="meta-llama/llama-4-scout-17b-16e-instruct",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "image_url",
+                                "image_url": {"url": f"data:image/jpeg;base64,{image_b64}"}
+                            },
+                            {"type": "text", "text": prompt}
+                        ]
+                    }
+                ],
+                temperature=0.5,
+                max_tokens=500,
+                response_format={"type": "json_object"}
+            )
+
+            text = completion.choices[0].message.content.strip()
             if "```json" in text:
                 text = text.split("```json")[1].split("```")[0].strip()
-            
+
             ai_data = json.loads(text)
-            
+
             return jsonify({
-                "success": True, 
-                "items": ai_data.get('items', []), 
+                "success": True,
+                "items": ai_data.get('items', []),
                 "totalKg": ai_data.get('totalKg', 0),
                 "reasoning": ai_data.get('reasoning')
             })
