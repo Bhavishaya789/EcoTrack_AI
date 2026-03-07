@@ -245,9 +245,9 @@ def _send_welcome_email_sync(user_email, first_name):
     smtp_pass    = smtp_pass_raw.strip() if smtp_pass_raw else ""
 
     try:
-        smtp_port = int(os.getenv("SMTP_PORT", 587))
+        smtp_port = int(os.getenv("SMTP_PORT", 465))
     except (ValueError, TypeError):
-        smtp_port = 587
+        smtp_port = 465
 
     subject = f"🌿 Welcome to {sender_name} – Let's Go Green Together!"
 
@@ -357,9 +357,8 @@ The {sender_name} Team
         msg.attach(MIMEText(html_body, 'html', 'utf-8'))
 
         # NOTE: Do NOT set_debuglevel inside threads — it can corrupt output and cause issues
-        with smtplib.SMTP(smtp_server, smtp_port, timeout=20) as server:
-            server.ehlo()
-            server.starttls()
+        # Always use SSL on port 465 — most reliable for Gmail
+        with smtplib.SMTP_SSL(smtp_server, 465, timeout=20) as server:
             server.ehlo()
             server.login(smtp_user, smtp_pass)
             server.send_message(msg)
@@ -429,7 +428,7 @@ def send_otp():
         sender_name  = os.getenv("COMPANY_NAME", "EcoTrack AI").strip()
         sender_email = os.getenv("COMPANY_EMAIL", "").strip()
         smtp_server  = os.getenv("SMTP_SERVER", "smtp.gmail.com").strip()
-        smtp_port    = int(os.getenv("SMTP_PORT", 587))
+        smtp_port    = int(os.getenv("SMTP_PORT", 465))
         smtp_user    = os.getenv("SMTP_USER", "").strip()
         smtp_pass    = os.getenv("SMTP_PASS", "").strip()
 
@@ -485,16 +484,17 @@ def send_otp():
         msg.attach(MIMEText(html_body, 'html', 'utf-8'))
 
         # Try sending email, but always return OTP as fallback
+        # Always return OTP — EmailJS on frontend handles the actual email sending
         try:
             with smtplib.SMTP_SSL(smtp_server, 465, timeout=10) as server:
                 server.ehlo()
                 server.login(smtp_user, smtp_pass)
                 server.send_message(msg)
             print(f"OTP EMAIL: Sent OTP to {email}")
-            return jsonify({"success": True, "message": f"OTP sent to {email} 📧"})
         except Exception as mail_err:
-            print(f"OTP EMAIL FAILED: {mail_err}")
-            return jsonify({"success": True, "message": "OTP ready", "otp": otp})
+            print(f"OTP SMTP skipped (EmailJS handles it): {mail_err}")
+
+        return jsonify({"success": True, "message": f"OTP ready for {email}", "otp": otp})
 
     except Exception as e:
         # Even if something else fails, try to return OTP
@@ -1196,12 +1196,7 @@ def ai_chat():
             return jsonify({"success": True, "response": "Hi! (Mock Mode) That sounds like a great eco-friendly choice. I've logged it for you.", "autoLog": False})
             
     except Exception as e:
-        print(f"AI Chat error: {str(e)}")
-        return jsonify({
-            "success": True, 
-            "response": "I'm having trouble connecting to the AI service right now. Please try again in a moment! 🌿",
-            "autoLog": False
-        })
+        return jsonify({"success": False, "message": str(e)}), 500
 
 @app.route('/api/ai/vision', methods=['POST'])
 @token_required
