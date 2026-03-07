@@ -14,9 +14,19 @@
     rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/landing.css" />
-  <!-- EmailJS SDK — loaded in head to ensure available before any button click -->
-  <!-- Init is handled in app.js automatically for all pages -->
+  <!-- EmailJS SDK with fallback -->
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script>
+    if (typeof emailjs === 'undefined') {
+      var s = document.createElement('script');
+      s.src = 'https://unpkg.com/@emailjs/browser@4/dist/email.min.js';
+      s.onload = function() { emailjs.init('grdE8hvT9O25mIPm0'); console.log('EmailJS loaded via fallback CDN ✅'); };
+      document.head.appendChild(s);
+    } else {
+      emailjs.init('grdE8hvT9O25mIPm0');
+      console.log('EmailJS initialized ✅');
+    }
+  </script>
 </head>
 
 <body class="landing-body">
