@@ -9,6 +9,20 @@ const STORAGE_KEYS = {
   TOKEN: 'ecotrack_token',
   USER: 'ecotrack_user'
 };
+
+// ── EmailJS Configuration ─────────────────────────────
+const EMAILJS_PUBLIC_KEY   = 'grdE8hvT9O25mIPm0';
+const EMAILJS_SERVICE_ID   = 'ecotrack_service';
+const EMAILJS_OTP_TEMPLATE = 'template_u2x005o';
+const EMAILJS_WELCOME_TEMPLATE = 'template_gunv9po';
+
+// Initialize EmailJS
+(function() {
+  if (typeof emailjs !== 'undefined') {
+    emailjs.init(EMAILJS_PUBLIC_KEY);
+  }
+})();
+
 // ── Federated Learning Simulation ─────────────────────
 // Research goal: Improve local predictions without sharing raw data.
 async function runFederatedTraining() {
@@ -147,6 +161,19 @@ async function handleLogin(e) {
     localStorage.setItem(STORAGE_KEYS.TOKEN, data.token);
     localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data.user));
 
+    // Send welcome email via EmailJS
+    if (typeof emailjs !== 'undefined') {
+      emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_WELCOME_TEMPLATE,
+        {
+          to_email: email,
+          first_name: firstName,
+          email: email
+        }
+      ).catch(e => console.warn('Welcome email failed:', e));
+    }
+
     if (data.user.role === 'admin' || email === 'admin@ecotrack.ai' || email === 'kumarbhavishya384@gmail.com') {
       window.location.href = 'admin_dashboard.html';
     } else {
@@ -228,6 +255,7 @@ async function handleFinalReset(e) {
 
 async function sendOTP() {
   const email = document.getElementById('regEmail').value.trim();
+  const firstName = document.getElementById('regFirstName')?.value.trim() || 'User';
 
   if (!email) {
     showGlobalToast("Please enter your email address first.");
@@ -239,21 +267,55 @@ async function sendOTP() {
   btn.textContent = "Sending...";
 
   try {
+    // Step 1: Generate OTP on backend (stores in MongoDB for verification)
     const data = await apiFetch('/auth/send-otp', {
       method: 'POST',
       body: JSON.stringify({ email })
     });
 
-    if (data.success) {
+    if (!data.success && !data.otp) {
+      throw new Error(data.message || 'Failed to generate OTP');
+    }
+
+    // Step 2: Get OTP value (from response if email failed, or use a fresh one)
+    const otpCode = data.otp || null;
+
+    // Step 3: Send OTP email via EmailJS (frontend, no SMTP needed)
+    if (typeof emailjs !== 'undefined') {
+      await emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_OTP_TEMPLATE,
+        {
+          to_email: email,
+          to_name: firstName,
+          otp: otpCode || '(check your registered email)',
+          email: email
+        }
+      );
       document.getElementById('otpGroup').style.display = 'flex';
       btn.textContent = "Resend OTP";
-      showGlobalToast(data.message || "OTP sent to your email! 📧");
+      showGlobalToast("OTP sent to " + email + " 📧");
     } else {
-      showGlobalToast("Failed: " + data.message);
-      btn.textContent = "Send OTP";
+      // EmailJS not loaded fallback
+      document.getElementById('otpGroup').style.display = 'flex';
+      btn.textContent = "Resend OTP";
+      if (data.otp) {
+        document.getElementById('regOTP').value = data.otp;
+        showGlobalToast("📋 OTP filled in for you: " + data.otp);
+      } else {
+        showGlobalToast(data.message || "OTP sent! 📧");
+      }
     }
   } catch (err) {
-    showGlobalToast("Failed: " + err.message);
+    // Even if EmailJS fails, show OTP if backend returned it
+    const otpInput = document.getElementById('regOTP');
+    if (err.otp) {
+      otpInput.value = err.otp;
+      document.getElementById('otpGroup').style.display = 'flex';
+      showGlobalToast("📋 OTP ready: " + err.otp);
+    } else {
+      showGlobalToast("Failed to send OTP: " + err.message);
+    }
     btn.textContent = "Send OTP";
   } finally {
     btn.disabled = false;
@@ -298,6 +360,19 @@ async function handleRegister(e) {
 
     localStorage.setItem(STORAGE_KEYS.TOKEN, data.token);
     localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data.user));
+
+    // Send welcome email via EmailJS
+    if (typeof emailjs !== 'undefined') {
+      emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_WELCOME_TEMPLATE,
+        {
+          to_email: email,
+          first_name: firstName,
+          email: email
+        }
+      ).catch(e => console.warn('Welcome email failed:', e));
+    }
 
     if (data.user.role === 'admin' || email === 'admin@ecotrack.ai' || email === 'kumarbhavishya384@gmail.com') {
       window.location.href = 'admin_dashboard.html';
