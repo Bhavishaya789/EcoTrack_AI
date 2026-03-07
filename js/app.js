@@ -16,6 +16,22 @@ const EMAILJS_SERVICE_ID   = 'ecotrack_service';
 const EMAILJS_OTP_TEMPLATE = 'template_u2x005o';
 const EMAILJS_WELCOME_TEMPLATE = 'template_gunv9po';
 
+// ── EmailJS Init (moved here so it works on ALL pages) ─
+(function initEmailJS() {
+  if (typeof emailjs !== 'undefined') {
+    emailjs.init(EMAILJS_PUBLIC_KEY);
+    console.log('EmailJS initialized ✅');
+  } else {
+    // Retry once after scripts load
+    window.addEventListener('load', function () {
+      if (typeof emailjs !== 'undefined') {
+        emailjs.init(EMAILJS_PUBLIC_KEY);
+        console.log('EmailJS initialized ✅ (on load)');
+      }
+    });
+  }
+})();
+
 
 // ── Federated Learning Simulation ─────────────────────
 // Research goal: Improve local predictions without sharing raw data.
@@ -155,18 +171,7 @@ async function handleLogin(e) {
     localStorage.setItem(STORAGE_KEYS.TOKEN, data.token);
     localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data.user));
 
-    // Send welcome email via EmailJS
-    if (typeof emailjs !== 'undefined') {
-      emailjs.send(
-        EMAILJS_SERVICE_ID,
-        EMAILJS_WELCOME_TEMPLATE,
-        {
-          to_email: email,
-          first_name: firstName,
-          email: email
-        }
-      ).catch(e => console.warn('Welcome email failed:', e));
-    }
+    // ✅ FIX: Removed welcome email from login — it only belongs in handleRegister
 
     if (data.user.role === 'admin' || email === 'admin@ecotrack.ai' || email === 'kumarbhavishya384@gmail.com') {
       window.location.href = 'admin_dashboard.html';
@@ -284,15 +289,15 @@ async function sendOTP() {
     }
 
     const result = await emailjs.send(
-      'ecotrack_service',
-      'template_u2x005o',
+      EMAILJS_SERVICE_ID,
+      EMAILJS_OTP_TEMPLATE,
       {
         to_email: email,
         to_name: firstName,
         otp: otpCode,
         email: email
       },
-      'grdE8hvT9O25mIPm0'
+      EMAILJS_PUBLIC_KEY
     );
 
     console.log('EmailJS result:', result);
@@ -351,14 +356,14 @@ async function handleRegister(e) {
     localStorage.setItem(STORAGE_KEYS.TOKEN, data.token);
     localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data.user));
 
-    // Send welcome email via EmailJS
+    // ✅ FIX: Send welcome email only on new registration, using correct firstName variable
     if (typeof emailjs !== 'undefined') {
       emailjs.send(
         EMAILJS_SERVICE_ID,
         EMAILJS_WELCOME_TEMPLATE,
         {
           to_email: email,
-          first_name: firstName,
+          first_name: firstName,   // ✅ firstName is properly defined in this scope
           email: email
         }
       ).catch(e => console.warn('Welcome email failed:', e));
