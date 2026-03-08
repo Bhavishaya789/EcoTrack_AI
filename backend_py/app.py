@@ -579,7 +579,7 @@ def forgot_password():
             
         # Mock token generation
         reset_token = os.urandom(4).hex().upper()  # Shorter 8-char code for easy typing
-        expiry = datetime.utcnow() + timedelta(minutes=15)
+        expiry = str(datetime.utcnow() + timedelta(minutes=15))
         
         # Persist token in user document so it survives server restarts
         users_col.update_one(
