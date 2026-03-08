@@ -579,7 +579,7 @@ def forgot_password():
             
         # Mock token generation
         reset_token = os.urandom(4).hex().upper()  # Shorter 8-char code for easy typing
-        expiry = str(datetime.utcnow() + timedelta(minutes=15))
+        expiry = datetime.utcnow() + timedelta(minutes=15)
         
         # Persist token in user document so it survives server restarts
         users_col.update_one(
@@ -599,7 +599,7 @@ def forgot_password():
         
         return jsonify({
             "success": True, 
-            "message": "Reset code generated successfully.", "resetCode": reset_token
+            "message": "A verification code has been generated and sent to your email. Please check your inbox (and spam) to proceed."
         })
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
@@ -814,38 +814,46 @@ def get_admin_stats():
         }
     })
 
+def safe_serialize(doc):
+    """Convert a MongoDB document to a JSON-safe dict — handles ObjectId, datetime, bytes."""
+    result = {}
+    for k, v in doc.items():
+        if k == 'password':
+            continue  # never expose password
+        elif k == '_id':
+            result['id'] = str(v)
+        elif isinstance(v, ObjectId):
+            result[k] = str(v)
+        elif isinstance(v, datetime):
+            result[k] = v.isoformat()
+        elif isinstance(v, bytes):
+            result[k] = v.decode('utf-8', errors='replace')
+        elif isinstance(v, dict):
+            result[k] = safe_serialize(v)
+        elif isinstance(v, list):
+            result[k] = [safe_serialize(i) if isinstance(i, dict) else str(i) if isinstance(i, (ObjectId, datetime)) else i for i in v]
+        else:
+            result[k] = v
+    return result
+
 @app.route('/api/admin/users', methods=['GET'])
 @token_required
 def get_admin_users():
     if request.user.get('role') != 'admin':
         return jsonify({"success": False, "message": "Access denied"}), 403
 
-    if use_mongodb:
-        raw_users = list(users_col.find({}, {"password": 0}))
-    else:
-        raw_users = load_local_db().get("users", [])
+    try:
+        if use_mongodb:
+            raw = list(users_col.find({}))  # fetch ALL fields so we can serialize properly
+        else:
+            raw = load_local_db().get("users", [])
 
-    result = []
-    for u in raw_users:
-        safe = {}
-        for k, v in u.items():
-            if k == '_id':
-                safe['id'] = str(v)
-            elif k == 'password':
-                continue
-            else:
-                # Convert any non-serializable types to string
-                try:
-                    import json
-                    json.dumps(v)
-                    safe[k] = v
-                except (TypeError, ValueError):
-                    safe[k] = str(v)
-        if 'id' not in safe:
-            safe['id'] = str(u.get('_id', ''))
-        result.append(safe)
+        users = [safe_serialize(u) for u in raw]
+        return jsonify({"success": True, "users": users, "total": len(users)})
 
-    return jsonify({"success": True, "users": result})
+    except Exception as e:
+        print(f"[get_admin_users ERROR] {e}")
+        return jsonify({"success": False, "message": f"Failed to load users: {str(e)}"}), 500
 
 @app.route('/api/admin/users/<uid>', methods=['DELETE'])
 @token_required
@@ -855,7 +863,8 @@ def delete_user(uid):
     
     if use_mongodb:
         users_col.delete_one({"_id": ObjectId(uid)})
-        entries_col.delete_many({"user": ObjectId(uid)})
+        # entries store user as plain string uid, not ObjectId
+        entries_col.delete_many({"user": uid})
     else:
         db_data = load_local_db()
         db_data["users"] = [u for u in db_data["users"] if str(u.get("_id")) != uid]
@@ -869,20 +878,23 @@ def delete_user(uid):
 def update_user_role(uid):
     if request.user.get('role') != 'admin':
         return jsonify({"success": False, "message": "Access denied"}), 403
-    data = request.json
+    data = request.get_json()
     new_role = data.get('role', '').strip()
     if new_role not in ['admin', 'user']:
-        return jsonify({"success": False, "message": "Invalid role"}), 400
-    if use_mongodb:
-        users_col.update_one({"_id": ObjectId(uid)}, {"$set": {"role": new_role}})
-    else:
-        db_data = load_local_db()
-        for u in db_data["users"]:
-            if str(u.get("_id")) == uid:
-                u["role"] = new_role
-                break
-        save_local_db(db_data)
-    return jsonify({"success": True, "message": f"Role updated to {new_role}"})
+        return jsonify({"success": False, "message": "Invalid role. Must be 'admin' or 'user'"}), 400
+    try:
+        if use_mongodb:
+            users_col.update_one({"_id": ObjectId(uid)}, {"$set": {"role": new_role}})
+        else:
+            db_data = load_local_db()
+            for u in db_data["users"]:
+                if str(u.get("_id")) == uid:
+                    u["role"] = new_role
+                    break
+            save_local_db(db_data)
+        return jsonify({"success": True, "message": f"Role updated to {new_role}"})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
 
 @app.route('/api/recommendations', methods=['GET'])
 @token_required

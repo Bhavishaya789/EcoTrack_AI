@@ -399,13 +399,9 @@
             gap: 0.75rem;
         }
     </style>
-    <link rel="stylesheet" href="css/responsive.css" />
 </head>
 
 <body class="app-body">
-    <!-- Mobile sidebar backdrop -->
-    <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeSidebar()"></div>
-
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-logo">
@@ -632,6 +628,7 @@
                 dateEl.textContent = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
             }
             refreshStats();
+            fetchAdminUsers(); // ✅ Auto-load all users on page load
         });
 
         async function refreshStats() {
@@ -733,42 +730,105 @@
         async function fetchAdminUsers() {
             const tbody = document.getElementById('userTableBody');
             tbody.innerHTML = `<tr><td colspan="6" style="padding:2rem; text-align:center; color:var(--text-muted);">
-                <span style="font-size:1.5rem; display:block; margin-bottom:0.5rem;">⏳</span>Loading users...
+                <span style="font-size:1.5rem; display:block; margin-bottom:0.5rem;">⏳</span>Loading users from database...
             </td></tr>`;
             try {
                 const data = await apiFetch('/admin/users');
+                console.log('[Admin] /admin/users response:', data);
+
+                if (!data.success) {
+                    tbody.innerHTML = `<tr><td colspan="6" style="padding:2rem; text-align:center; color:var(--danger);">
+                        ❌ Server error: ${data.message || 'Unknown error'}
+                    </td></tr>`;
+                    return;
+                }
+
+                const users = data.users || [];
+
+                if (users.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" style="padding:2rem; text-align:center; color:var(--text-muted);">
+                        No users found in database.
+                    </td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = '';
+                users.forEach(u => {
+                    // Safe fallbacks for every field
+                    const firstName = u.firstName || u.first_name || 'Unknown';
+                    const lastName  = u.lastName  || u.last_name  || '';
+                    const email     = u.email     || '—';
+                    const phone     = u.phone     || '';
+                    const role      = u.role      || 'user';
+                    const uid       = u.id        || u._id || '';
+
+                    const initials = firstName[0].toUpperCase() + (lastName[0] || '?').toUpperCase();
+                    const roleClass = role === 'admin' ? 'role-admin' : 'role-user';
+
+                    // Safe date — handle ISO string, timestamp, or missing
+                    let joinedStr = '—';
+                    if (u.createdAt) {
+                        try { joinedStr = new Date(u.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
+                        catch(e) { joinedStr = String(u.createdAt).slice(0, 10); }
+                    }
+
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>
+                            <div class="user-cell">
+                                <div class="user-initials-badge">${initials}</div>
+                                <div>
+                                    <div class="user-cell-name">${firstName} ${lastName}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="color:var(--text-secondary); font-size:0.83rem;">${email}</td>
+                        <td style="color:var(--text-secondary); font-size:0.83rem;">${phone || '—'}</td>
+                        <td><span class="role-badge ${roleClass}">${role}</span></td>
+                        <td style="font-size:0.78rem; color:var(--text-muted);">${joinedStr}</td>
+                        <td style="text-align:right;">
+                            <div style="display:flex; gap:8px; justify-content:flex-end; align-items:center; flex-wrap:wrap;">
+                                ${phone ? `<a href="https://wa.me/${phone.replace(/\D/g,'')}?text=Hi%20${encodeURIComponent(firstName)},%20Welcome%20to%20EcoTrack%20AI!%20🌿" target="_blank" style="text-decoration:none;font-size:1.1rem;" title="Chat on WhatsApp">💬</a>` : ''}
+                                <button onclick="resendWelcome('${email}','${firstName}')" style="background:none;border:none;color:var(--primary);cursor:pointer;font-size:1rem;" title="Resend Welcome Email">📧</button>
+                                <button onclick="changeRole('${uid}','${role}')" style="background:none;border:none;color:var(--warning);cursor:pointer;font-size:0.75rem;padding:3px 8px;border-radius:8px;border:1px solid rgba(255,179,71,0.3);" title="Toggle Role">
+                                    ${role === 'admin' ? '👤 Make User' : '🔑 Make Admin'}
+                                </button>
+                                <button onclick="deleteUser('${uid}')" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:1.1rem;" title="Delete User">🗑️</button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+
+                // Update user count in stats
+                const el = document.getElementById('totalUsers');
+                if (el) el.textContent = users.length;
+
+            } catch (err) {
+                console.error('[Admin] fetchAdminUsers error:', err);
+                tbody.innerHTML = `<tr><td colspan="6" style="padding:2rem; text-align:center; color:var(--danger);">
+                    ❌ Failed to load users: ${err.message}<br>
+                    <small style="color:var(--text-muted); margin-top:0.5rem; display:block;">Check browser console for details.</small>
+                </td></tr>`;
+            }
+        }
+
+        async function changeRole(uid, currentRole) {
+            const newRole = currentRole === 'admin' ? 'user' : 'admin';
+            if (!confirm(`Change this user's role to "${newRole}"?`)) return;
+            try {
+                const data = await apiFetch(`/admin/users/${uid}/role`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ role: newRole })
+                });
                 if (data.success) {
-                    tbody.innerHTML = '';
-                    data.users.forEach(u => {
-                        const initials = (u.firstName || 'U')[0].toUpperCase() + (u.lastName || '?')[0].toUpperCase();
-                        const roleClass = u.role === 'admin' ? 'role-admin' : 'role-user';
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td>
-                                <div class="user-cell">
-                                    <div class="user-initials-badge">${initials}</div>
-                                    <div>
-                                        <div class="user-cell-name">${u.firstName} ${u.lastName || ''}</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td style="color:var(--text-secondary); font-size:0.83rem;">${u.email}</td>
-                            <td style="color:var(--text-secondary); font-size:0.83rem;">${u.phone || '—'}</td>
-                            <td><span class="role-badge ${roleClass}">${u.role}</span></td>
-                            <td style="font-size:0.78rem; color:var(--text-muted);">${new Date(u.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
-                            <td style="text-align:right;">
-                                <div style="display:flex; gap:8px; justify-content:flex-end; align-items:center;">
-                                    ${u.phone ? `<a href="https://wa.me/${u.phone.replace(/\D/g, '')}?text=Hi%20${u.firstName},%20Welcome%20to%20EcoTrack%20AI!%20🌿" target="_blank" style="text-decoration:none; font-size:1.1rem;" title="Chat on WhatsApp">💬</a>` : ''}
-                                    <button onclick="resendWelcome('${u.email}', '${u.firstName}')" style="background:none; border:none; color:var(--primary); cursor:pointer; font-size:1rem; transition:0.2s;" title="Resend Welcome Email" onmouseover="this.style.filter='drop-shadow(0 0 6px var(--primary))'" onmouseout="this.style.filter='none'">📧</button>
-                                    <button onclick="deleteUser('${u.id}')" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:1.1rem; transition:0.2s;" title="Delete User" onmouseover="this.style.filter='drop-shadow(0 0 6px var(--danger))'" onmouseout="this.style.filter='none'">🗑️</button>
-                                </div>
-                            </td>
-                        `;
-                        tbody.appendChild(row);
-                    });
+                    showGlobalToast(`✅ Role changed to ${newRole}`);
+                    fetchAdminUsers();
+                } else {
+                    showGlobalToast('❌ ' + (data.message || 'Failed to change role'));
                 }
             } catch (err) {
-                tbody.innerHTML = `<tr><td colspan="6" style="padding:2rem; text-align:center; color:var(--danger);">Failed to load users: ${err.message}</td></tr>`;
+                showGlobalToast('❌ Error: ' + err.message);
             }
         }
 
