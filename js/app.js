@@ -186,6 +186,7 @@ async function handleLogin(e) {
   }
 }
 
+// ── FIXED: Forgot Password — now sends reset code via EmailJS ✅
 async function handleForgotPassword(e) {
   e.preventDefault();
   const email = document.getElementById('resetEmail').value.trim();
@@ -196,14 +197,49 @@ async function handleForgotPassword(e) {
     btn.disabled = true;
     btn.textContent = 'Sending...';
 
+    // Step 1: Ask backend to generate & store the reset code
     const data = await apiFetch('/auth/forgot-password', {
       method: 'POST',
       body: JSON.stringify({ email })
     });
 
-    statusEl.innerHTML = `<strong>Code Dispatched!</strong> ${data.message}<br><br><a href="#" onclick="switchModal('forgotPasswordModal','resetPasswordModal'); document.getElementById('finalResetEmail').value='${email}'" style="color:var(--primary); font-weight:700;">Proceed to Reset →</a>`;
+    const resetCode = data.resetCode;
+    if (!resetCode) {
+      throw new Error('No reset code received from server. Please try again.');
+    }
+
+    // Step 2: Send the reset code via EmailJS — reusing the same OTP template ✅
+    if (typeof emailjs === 'undefined') {
+      throw new Error('EmailJS SDK not loaded. Please refresh and try again.');
+    }
+
+    // Always re-init right before sending — fixes timing issues
+    emailjs.init(EMAILJS_PUBLIC_KEY);
+
+    const result = await emailjs.send(
+      EMAILJS_SERVICE_ID,
+      EMAILJS_OTP_TEMPLATE,       // ✅ Reusing the same OTP template — no new template needed!
+      {
+        to_email: email,
+        to_name: email,           // name not available at this step, use email as fallback
+        otp: resetCode,           // reset code goes into the OTP field of the template
+        email: email
+      },
+      EMAILJS_PUBLIC_KEY
+    );
+
+    console.log('Reset code email sent via EmailJS:', result);
+
+    // Step 3: Show success with link to proceed
+    statusEl.innerHTML = `<strong>Code Sent! ✅</strong> A password reset code has been sent to <strong>${email}</strong>. Check your inbox (and spam folder).<br><br>
+      <a href="#" onclick="switchModal('forgotPasswordModal','resetPasswordModal'); document.getElementById('finalResetEmail').value='${email}'" 
+      style="color:var(--primary); font-weight:700;">Enter Code & Reset Password →</a>`;
     statusEl.style.display = 'block';
+    statusEl.style.background = 'rgba(34, 197, 94, 0.1)';
+    statusEl.style.borderColor = 'rgba(34, 197, 94, 0.2)';
+    statusEl.style.color = '#22c55e';
     btn.textContent = 'Check Email ✔️';
+
   } catch (err) {
     statusEl.textContent = err.message;
     statusEl.style.display = 'block';

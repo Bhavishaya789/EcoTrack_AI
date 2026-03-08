@@ -599,7 +599,7 @@ def forgot_password():
         
         return jsonify({
             "success": True, 
-            "message": "A verification code has been generated and sent to your email. Please check your inbox (and spam) to proceed."
+            "message": "Reset code generated successfully.", "resetCode": reset_token
         })
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
