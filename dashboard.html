@@ -18,8 +18,10 @@
     <link rel="stylesheet" href="css/dashboard.css" />
     <meta name="theme-color" content="#22c55e">
     <!-- Leaflet Map Library -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 </head>
 
 <body class="app-body">
@@ -141,7 +143,8 @@
                         <div class="streak-widget">
                             <div class="streak-icon">🔥</div>
                             <div class="streak-info">
-                                <div class="streak-label" data-i18n="dailyStreak" data-i18n="daily_streak">DAILY STREAK</div>
+                                <div class="streak-label" data-i18n="dailyStreak" data-i18n="daily_streak">DAILY STREAK
+                                </div>
                                 <div class="streak-bar">
                                     <div class="streak-fill" style="width: 65%;"></div>
                                 </div>
@@ -170,7 +173,8 @@
                     <div class="breakdown-item" data-cat="transport">
                         <span class="breakdown-icon">🚗</span>
                         <div class="breakdown-bar-wrap">
-                            <span class="breakdown-label" data-i18n="transport_label" data-i18n="transport_label">TRANSPORTATION</span>
+                            <span class="breakdown-label" data-i18n="transport_label"
+                                data-i18n="transport_label">TRANSPORTATION</span>
                             <div class="breakdown-bar">
                                 <div class="breakdown-fill transport-fill" id="transportFill" style="width:0%"></div>
                             </div>
@@ -180,7 +184,8 @@
                     <div class="breakdown-item" data-cat="electricity">
                         <span class="breakdown-icon">⚡</span>
                         <div class="breakdown-bar-wrap">
-                            <span class="breakdown-label" data-i18n="electricity_label" data-i18n="electricity_label">ELECTRICITY</span>
+                            <span class="breakdown-label" data-i18n="electricity_label"
+                                data-i18n="electricity_label">ELECTRICITY</span>
                             <div class="breakdown-bar">
                                 <div class="breakdown-fill electricity-fill" id="electricFill" style="width:0%"></div>
                             </div>
@@ -190,7 +195,8 @@
                     <div class="breakdown-item" data-cat="food">
                         <span class="breakdown-icon">🍽️</span>
                         <div class="breakdown-bar-wrap">
-                            <span class="breakdown-label" data-i18n="diet_label" data-i18n="diet_label">DIET & MEALS</span>
+                            <span class="breakdown-label" data-i18n="diet_label" data-i18n="diet_label">DIET &
+                                MEALS</span>
                             <div class="breakdown-bar">
                                 <div class="breakdown-fill food-fill" id="foodFill" style="width:0%"></div>
                             </div>
@@ -198,13 +204,26 @@
                         <span class="breakdown-val" id="foodVal">0 kg</span>
                     </div>
                 </div>
+                <p id="electricityNote" style="
+                    font-size: 0.72rem;
+                    color: var(--text-muted);
+                    margin-top: 0.75rem;
+                    line-height: 1.5;
+                    padding: 0 0.25rem;
+                    background: rgba(245,158,11,0.06);
+                    border: 1px solid rgba(245,158,11,0.12);
+                    border-radius: 8px;
+                    padding: 0.4rem 0.75rem;
+                    display: none;
+                "></p>
             </div>
 
             <!-- Trend Chart -->
             <div class="card chart-card full-width reveal">
                 <div class="activity-table-header"
                     style="padding: 1rem 0 1.5rem 0; display:flex; justify-content:space-between; align-items:center;">
-                    <h3 style="font-family:'Space Grotesk'; font-size:1.1rem;" data-i18n="emission_analytics" data-i18n="emission_analytics">📈 Emission Analytics</h3>
+                    <h3 style="font-family:'Space Grotesk'; font-size:1.1rem;" data-i18n="emission_analytics"
+                        data-i18n="emission_analytics">📈 Emission Analytics</h3>
                     <div class="chart-controls">
                         <button class="chart-btn active" onclick="updateChart('week', this)">7D</button>
                         <button class="chart-btn" onclick="updateChart('month', this)">30D</button>
@@ -260,33 +279,48 @@
             <div class="card regional-benchmark-card reveal" style="grid-column: span 1;">
                 <div class="card-header">
                     <h3>Carbon Benchmarks</h3>
-                    <div id="userZoneBadge" class="badge-live" style="background:var(--primary); color:#000;">GLOBAL</div>
+                    <div id="userZoneBadge" class="badge-live" style="background:var(--primary); color:#000;">GLOBAL
+                    </div>
                 </div>
                 <!-- Mini Map Section -->
-                <div id="miniMap" style="height: 180px; border-radius: 12px; margin: 10px 0; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); overflow: hidden; z-index: 10;">
-                    <div style="display:flex; align-items:center; justify-content:center; height:100%; color:var(--text-muted); font-size:0.8rem;">
+                <div id="miniMap"
+                    style="height: 180px; border-radius: 12px; margin: 10px 0; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); overflow: hidden; z-index: 10;">
+                    <div
+                        style="display:flex; align-items:center; justify-content:center; height:100%; color:var(--text-muted); font-size:0.8rem;">
                         <span class="loading-spinner"></span> Calibrating Geo-Grid...
                     </div>
                 </div>
                 <div class="benchmark-content" style="padding: 0.5rem 0;">
                     <div class="benchmark-item" style="margin-bottom: 1.5rem;">
-                        <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem; font-size:0.8rem;">
+                        <div
+                            style="display:flex; justify-content:space-between; margin-bottom:0.5rem; font-size:0.8rem;">
                             <span style="color:var(--text-secondary);">vs India National Avg</span>
                             <span style="font-weight:700;">5.2 kg/day</span>
                         </div>
-                        <div style="height:8px; background:rgba(255,255,255,0.05); border-radius:4px; position:relative; overflow:hidden;">
-                            <div id="nationalAvgFill" style="position:absolute; height:100%; width:0%; background:#3B82F6; transition:1.5s ease-out;"></div>
-                            <div id="userAvgMarkerNational" style="position:absolute; height:100%; width:2px; background:#fff; left:0%; z-index:2; box-shadow:0 0 10px #fff;"></div>
+                        <div
+                            style="height:8px; background:rgba(255,255,255,0.05); border-radius:4px; position:relative; overflow:hidden;">
+                            <div id="nationalAvgFill"
+                                style="position:absolute; height:100%; width:0%; background:#3B82F6; transition:1.5s ease-out;">
+                            </div>
+                            <div id="userAvgMarkerNational"
+                                style="position:absolute; height:100%; width:2px; background:#fff; left:0%; z-index:2; box-shadow:0 0 10px #fff;">
+                            </div>
                         </div>
                     </div>
                     <div class="benchmark-item">
-                        <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem; font-size:0.8rem;">
+                        <div
+                            style="display:flex; justify-content:space-between; margin-bottom:0.5rem; font-size:0.8rem;">
                             <span style="color:var(--text-secondary);" id="zoneAvgLabel">vs Zone Average</span>
                             <span style="font-weight:700;" id="zoneAvgVal">-- kg/day</span>
                         </div>
-                        <div style="height:8px; background:rgba(255,255,255,0.05); border-radius:4px; position:relative; overflow:hidden;">
-                            <div id="zoneAvgFill" style="position:absolute; height:100%; width:0%; background:var(--primary); transition:1.5s ease-out;"></div>
-                            <div id="userAvgMarkerZone" style="position:absolute; height:100%; width:2px; background:#fff; left:0%; z-index:2; box-shadow:0 0 10px #fff;"></div>
+                        <div
+                            style="height:8px; background:rgba(255,255,255,0.05); border-radius:4px; position:relative; overflow:hidden;">
+                            <div id="zoneAvgFill"
+                                style="position:absolute; height:100%; width:0%; background:var(--primary); transition:1.5s ease-out;">
+                            </div>
+                            <div id="userAvgMarkerZone"
+                                style="position:absolute; height:100%; width:2px; background:#fff; left:0%; z-index:2; box-shadow:0 0 10px #fff;">
+                            </div>
                         </div>
                     </div>
                     <p style="font-size:0.7rem; color:var(--text-muted); margin-top:1.25rem; line-height:1.4;">

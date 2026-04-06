@@ -158,11 +158,48 @@ function updateEmissionDisplay(entriesOverride) {
     }
 
     const totals = { transport: 0, electricity: 0, food: 0 };
+
+    // Transport & food are daily values — sum them normally
     filtered.forEach(e => {
         totals.transport += (+e.transport || 0);
-        totals.electricity += (+e.electricity || 0);
         totals.food += (+e.food || 0);
     });
+
+    // Electricity is stored as a MONTHLY total — prorate it into the selected period
+    const DAYS_IN_MONTH = 30;
+    const daysInPeriod = period === 'today' ? 1
+        : period === 'week' ? 7
+            : 30;
+
+    // Find the most recent entry that has a monthly electricity value logged
+    const latestElecEntry = [...allEntries]
+        .filter(e => (+e.electricity || 0) > 0)
+        .sort((a, b) => b.date.localeCompare(a.date))[0];
+
+    const monthlyElecKg = latestElecEntry ? +latestElecEntry.electricity : 0;
+    const dailyElecKg = monthlyElecKg / DAYS_IN_MONTH;
+    totals.electricity = dailyElecKg * daysInPeriod;
+    // Update the prorated electricity note for user clarity
+    const elecNoteEl = document.getElementById('electricityNote');
+    if (elecNoteEl) {
+        if (monthlyElecKg > 0) {
+            elecNoteEl.style.display = 'block';
+            elecNoteEl.textContent =
+                `⚡ Monthly electricity ${monthlyElecKg.toFixed(1)} kg ÷ 30 = `
+                + `${dailyElecKg.toFixed(2)} kg/day (shown prorated for "${period}" view)`;
+        } else {
+            elecNoteEl.style.display = 'none';
+        }
+    }
+
+    // NORMALIZATION: Electricity is logged as monthly, but dashboard filters need spread
+    if (period === 'today') {
+        totals.electricity = totals.electricity / 30;
+    } else if (period === 'week') {
+        // Spread the monthly log over 7 days for the weekly view
+        totals.electricity = (totals.electricity / 30) * 7;
+    }
+    // For 'month', we leave totals.electricity as the sum (which is the full bill)
 
     const total = totals.transport + totals.electricity + totals.food;
     const maxVal = Math.max(...Object.values(totals), 1);
@@ -184,7 +221,7 @@ function updateEmissionDisplay(entriesOverride) {
 
     // Update Quick Stats to reflect this period
     renderQuickStats(user, filtered, period);
-    
+
     // NEW: Regional Grid Comparisons
     renderRegionalBenchmarks(user, filtered);
     initMiniMap(user);
@@ -197,9 +234,9 @@ function initMiniMap(user) {
 
     const lat = user.lat || 20.5937; // Default India center
     const lon = user.lon || 78.9629;
-    
+
     document.getElementById('miniMap').innerHTML = ''; // Clear spinner
-    
+
     miniMapInstance = L.map('miniMap', {
         center: [lat, lon],
         zoom: 4,
@@ -214,12 +251,12 @@ function initMiniMap(user) {
 
     // Grid Zone Outlines (Simple visual representation)
     const zoneColors = {
-        'Northern': '#ff4d4d', 'Western': '#ffa500', 'Southern': '#22c55e', 
+        'Northern': '#ff4d4d', 'Western': '#ffa500', 'Southern': '#22c55e',
         'Eastern': '#3b82f6', 'North-Eastern': '#a855f7'
     };
-    
+
     const zoneColor = user.zone ? zoneColors[user.zone] : '#00d4aa';
-    
+
     // Custom Pulsing Dot for user location
     const customIcon = L.divIcon({
         className: 'user-location-marker',
@@ -230,17 +267,17 @@ function initMiniMap(user) {
     if (user.lat && user.lon) {
         L.marker([lat, lon], { icon: customIcon }).addTo(miniMapInstance);
         miniMapInstance.setView([lat, lon], 5);
-        
+
         // Label for detected state
         if (user.state) {
-            L.popup({ 
-                closeButton: false, 
+            L.popup({
+                closeButton: false,
                 autoClose: false,
                 className: 'map-label'
             })
-            .setLatLng([lat + 0.5, lon])
-            .setContent(`<div style="font-size:0.7rem; font-weight:800; color:${zoneColor}">${user.state.toUpperCase()}</div>`)
-            .openOn(miniMapInstance);
+                .setLatLng([lat + 0.5, lon])
+                .setContent(`<div style="font-size:0.7rem; font-weight:800; color:${zoneColor}">${user.state.toUpperCase()}</div>`)
+                .openOn(miniMapInstance);
         }
     }
 }
@@ -249,15 +286,15 @@ function renderRegionalBenchmarks(user, currentEntries) {
     const nationalAvg = 5.2;
     const zoneAvg = user.zone_avg || 5.2;
     const zoneName = user.zone || 'National';
-    
+
     // Calculate REAL Daily Average over the last 30 CALENDAR days
     const now = new Date();
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(now.getDate() - 30);
     const startDateStr = thirtyDaysAgo.toISOString().split('T')[0];
-    
+
     const entriesLast30 = allEntries.filter(e => e.date >= startDateStr);
-    
+
     // total = sum of transport + sum of food + TOTAL electricity bill for the month
     const totalCO2 = entriesLast30.reduce((s, e) => s + (e.total || 0), 0);
     const userDailyAvg = totalCO2 / 30; // Spread over 30 days
@@ -265,7 +302,7 @@ function renderRegionalBenchmarks(user, currentEntries) {
     // Display updates
     const zoneBadge = document.getElementById('userZoneBadge');
     if (zoneBadge) zoneBadge.textContent = zoneName.toUpperCase();
-    
+
     const zoneLabel = document.getElementById('zoneAvgLabel');
     if (zoneLabel) zoneLabel.textContent = `vs ${zoneName} Avg`;
 
