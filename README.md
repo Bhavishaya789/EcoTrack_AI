@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Bhavishaya789/EcoTrack_AI/main/assets/icons/icon-512x512.png" alt="EcoTrack AI Logo" width="150" onerror="this.src='https://img.icons8.com/color/150/000000/leaf.png'">
+  <img src="assets/logo.png" alt="EcoTrack AI Logo" width="150">
 </p>
 
 <h1 align="center">🌿 EcoTrack AI</h1>
